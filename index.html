@@ -3,321 +3,49 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestione Presenze & Ferie - Dark Inox</title>
+    <title>Gestione Presenze & Ferie - Inox Workshop</title>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <style>
         body {
-            background-color: #121417;
+            background-color: #0d0f12;
+            background-image: 
+                radial-gradient(circle at 50% 0%, #1a1e26 0%, #0d0f12 75%),
+                repeating-linear-gradient(45deg, rgba(255,255,255,0.01) 0, rgba(255,255,255,0.01) 2px, transparent 0, transparent 4px);
             color: #e2e8f0;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
         }
         .industrial-card {
-            background: linear-gradient(135deg, #1e2229 0%, #16191f 100%);
-            border: 1px solid #2d3440;
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+            background: linear-gradient(135deg, #22262e 0%, #171a21 100%);
+            border: 1px solid #384152;
+            box-shadow: 0 12px 30px -5px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.08), inset 0 -1px 0 rgba(0, 0, 0, 0.5);
+            position: relative;
         }
+        /* Effetto viti stile pannello officina agli angoli delle schede principali */
+        .industrial-card::before, .industrial-card::after {
+            content: '';
+            position: absolute;
+            width: 5px;
+            height: 5px;
+            background: #4a5568;
+            border-radius: 50%;
+            box-shadow: inset 0 1px 1px rgba(0,0,0,0.8);
+        }
+        .industrial-card::before { top: 8px; left: 8px; }
+        .industrial-card::after { top: 8px; right: 8px; }
+
         .industrial-input {
-            background-color: #0d0f12;
-            border: 1px solid #2d3440;
+            background-color: #111418;
+            border: 1px solid #333d4f;
             color: #f8fafc;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.6);
         }
         .industrial-input:focus {
             border-color: #64748b;
             outline: none;
-            box-shadow: 0 0 0 2px rgba(100, 116, 139, 0.2);
+            box-shadow: 0 0 0 2px rgba(100, 116, 139, 0.3), inset 0 2px 4px rgba(0,0,0,0.6);
         }
         /* Stili Calendario Mensile */
         .cal-grid {
             display: grid;
             grid-template-columns: repeat(7, minmax(0, 1fr));
-            gap: 4px;
-        }
-        .cal-day {
-            aspect-ratio: 1;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            border-radius: 6px;
-            font-size: 0.8rem;
-            background-color: #1a1e26;
-            border: 1px solid #262c38;
-            position: relative;
-            cursor: pointer;
-        }
-        .cal-day.has-ferie { background-color: rgba(59, 130, 246, 0.2); border-color: #3b82f6; }
-        .cal-day.has-straordinari { background-color: rgba(234, 179, 8, 0.2); border-color: #eab308; }
-        .cal-day.has-permessi { background-color: rgba(168, 85, 247, 0.2); border-color: #a855f7; }
-        .cal-day.has-malattia { background-color: rgba(239, 68, 68, 0.2); border-color: #ef4444; }
-        .cal-day.has-lavoro { background-color: rgba(34, 197, 94, 0.15); border-color: #22c55e; }
-    </style>
-</head>
-<body class="min-h-screen pb-12 px-3 sm:px-6">
-
-    <div class="max-w-md mx-auto pt-6">
-        <!-- HEADER -->
-        <header class="text-center mb-6">
-            <div class="inline-block px-3 py-1 rounded-full text-xs font-semibold tracking-wider uppercase mb-2 bg-[#262c38] text-slate-300 border border-[#3b4455]">
-                Industrial Edition v2.0
-            </div>
-            <h1 class="text-2xl font-bold tracking-tight text-slate-100">Gestione Presenze</h1>
-            <p class="text-xs text-slate-400 mt-1">Acciaio Inox Dark Dashboard</p>
-        </header>
-
-        <!-- PROGRESSO STRAORDINARI -->
-        <div class="industrial-card rounded-xl p-4 mb-5">
-            <div class="flex justify-between items-center mb-2">
-                <span class="text-xs font-medium text-slate-300 uppercase tracking-wider">Progresso Straordinari Mese</span>
-                <span id="overtime-counter" class="text-xs font-bold text-amber-400">0.0 / 20 ore</span>
-            </div>
-            <div class="w-full bg-[#0d0f12] rounded-full h-2.5 overflow-hidden border border-[#2d3440]">
-                <div id="overtime-bar" class="bg-amber-500 h-2.5 rounded-full transition-all duration-500" style="width: 0%"></div>
-            </div>
-        </div>
-
-        <!-- FORM INSERIMENTO DATI -->
-        <div class="industrial-card rounded-xl p-5 mb-6">
-            <h2 class="text-sm font-semibold text-slate-200 mb-4 flex items-center gap-2">
-                <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-                Registra Giornata
-            </h2>
-            
-            <form id="attendance-form" class="space-y-4">
-                <div>
-                    <label class="block text-xs font-medium text-slate-400 mb-1">Data</label>
-                    <input type="date" id="entry-date" required class="industrial-input w-full rounded-lg px-3 py-2 text-sm">
-                </div>
-
-                <div class="grid grid-cols-2 gap-3">
-                    <div>
-                        <label class="block text-xs font-medium text-slate-400 mb-1">Stato Lavorativo</label>
-                        <select id="entry-status" class="industrial-input w-full rounded-lg px-3 py-2 text-sm">
-                            <option value="Lavorato">Lavorato Ordinario</option>
-                            <option value="Ferie">Ferie</option>
-                            <option value="Malattia">Malattia</option>
-                            <option value="Riposo">Riposo / Festivo</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-xs font-medium text-slate-400 mb-1">Straordinari (ore)</label>
-                        <input type="number" step="0.5" id="entry-overtime" placeholder="0" min="0" class="industrial-input w-full rounded-lg px-3 py-2 text-sm">
-                    </div>
-                </div>
-
-                <div class="grid grid-cols-2 gap-3">
-                    <div>
-                        <label class="block text-xs font-medium text-slate-400 mb-1">Permessi (ore)</label>
-                        <input type="number" step="0.5" id="entry-permits" placeholder="0" min="0" class="industrial-input w-full rounded-lg px-3 py-2 text-sm">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-medium text-slate-400 mb-1">Note / Extra</label>
-                        <input type="text" id="entry-notes" placeholder="Es. Trasferta" class="industrial-input w-full rounded-lg px-3 py-2 text-sm">
-                    </div>
-                </div>
-
-                <button type="submit" class="w-full mt-2 bg-gradient-to-r from-slate-700 to-slate-800 hover:from-slate-600 hover:to-slate-700 text-slate-100 font-semibold py-2.5 px-4 rounded-lg text-sm border border-slate-600 transition-all shadow-md active:scale-[0.99]">
-                    Salva Registrazione
-                </button>
-            </form>
-        </div>
-
-        <!-- CALENDARIO A VISTA DEL MESE -->
-        <div class="industrial-card rounded-xl p-5 mb-6">
-            <div class="flex justify-between items-center mb-4">
-                <h2 id="calendar-month-title" class="text-sm font-semibold text-slate-200 capitalize">Calendario</h2>
-                <div class="flex gap-1">
-                    <button id="prev-month" class="px-2.5 py-1 bg-[#262c38] hover:bg-[#323b4d] rounded text-xs text-slate-300 border border-[#3b4455]">◀</button>
-                    <button id="next-month" class="px-2.5 py-1 bg-[#262c38] hover:bg-[#323b4d] rounded text-xs text-slate-300 border border-[#3b4455]">▶</button>
-                </div>
-            </div>
-
-            <!-- Legenda Colori -->
-            <div class="grid grid-cols-4 gap-1.5 mb-3 text-[10px] text-slate-400 text-center">
-                <div class="flex items-center justify-center gap-1"><span class="w-2 h-2 rounded-full bg-blue-500"></span> Ferie</div>
-                <div class="flex items-center justify-center gap-1"><span class="w-2 h-2 rounded-full bg-amber-500"></span> Straord.</div>
-                <div class="flex items-center justify-center gap-1"><span class="w-2 h-2 rounded-full bg-purple-500"></span> Permessi</div>
-                <div class="flex items-center justify-center gap-1"><span class="w-2 h-2 rounded-full bg-red-500"></span> Malattia</div>
-            </div>
-
-            <!-- Giorni della settimana -->
-            <div class="cal-grid text-[11px] font-semibold text-slate-400 mb-1 text-center">
-                <div>Lun</div><div>Mar</div><div>Mer</div><div>Gio</div><div>Ven</div><div>Sab</div><div>Dom</div>
-            </div>
-            <!-- Griglia dei giorni -->
-            <div id="calendar-days" class="cal-grid"></div>
-        </div>
-
-        <!-- AZIONI E CONDIVISIONE WHATSAPP -->
-        <div class="industrial-card rounded-xl p-4 flex flex-col gap-3">
-            <button id="share-whatsapp" class="w-full bg-emerald-700 hover:bg-emerald-600 text-white font-medium py-2.5 px-4 rounded-lg text-sm transition-all flex items-center justify-center gap-2 shadow-lg">
-                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.663.712.228 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/></svg>
-                Invia Resoconto su WhatsApp
-            </button>
-            <button id="clear-data" class="text-xs text-slate-500 hover:text-red-400 py-1 transition-colors">
-                Cancella tutti i dati salvati
-            </button>
-        </div>
-    </div>
-
-    <!-- SCRIPT LOGICA APPLICAZIONE -->
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            // Imposta la data odierna di default nel form
-            const today = new Date().toISOString().split('T')[0];
-            document.getElementById('entry-date').value = today;
-
-            let currentDate = new Date();
-
-            // Caricamento dati da localStorage
-            function getStoredData() {
-                return JSON.parse(localStorage.getItem('industrial_attendance') || '{}');
-            }
-
-            function saveStoredData(data) {
-                localStorage.setItem('industrial_attendance', JSON.stringify(data));
-            }
-
-            // Gestione invio form
-            document.getElementById('attendance-form').addEventListener('submit', (e) => {
-                e.preventDefault();
-                const date = document.getElementById('entry-date').value;
-                const status = document.getElementById('entry-status').value;
-                const overtime = parseFloat(document.getElementById('entry-overtime').value) || 0;
-                const permits = parseFloat(document.getElementById('entry-permits').value) || 0;
-                const notes = document.getElementById('entry-notes').value;
-
-                if (!date) return;
-
-                const data = getStoredData();
-                data[date] = { status, overtime, permits, notes };
-                saveStoredData(data);
-
-                // Reset campi numerici e note
-                document.getElementById('entry-overtime').value = '';
-                document.getElementById('entry-permits').value = '';
-                document.getElementById('entry-notes').value = '';
-
-                renderApp();
-            });
-
-            // Pulsante Reset
-            document.getElementById('clear-data').addEventListener('click', () => {
-                if (confirm('Vuoi davvero cancellare tutte le presenze salvate?')) {
-                    localStorage.removeItem('industrial_attendance');
-                    renderApp();
-                }
-            });
-
-            // Navigazione Mesi
-            document.getElementById('prev-month').addEventListener('click', () => {
-                currentDate.setMonth(currentDate.getMonth() - 1);
-                renderApp();
-            });
-            document.getElementById('next-month').addEventListener('click', () => {
-                currentDate.setMonth(currentDate.getMonth() + 1);
-                renderApp();
-            });
-
-            // Condivisione WhatsApp
-            document.getElementById('share-whatsapp').addEventListener('click', () => {
-                const data = getStoredData();
-                const year = currentDate.getFullYear();
-                const month = currentDate.getMonth();
-                
-                let totalOvertime = 0;
-                let totalPermits = 0;
-                let summaryLines = [];
-
-                const monthName = currentDate.toLocaleString('it-IT', { month: 'long', year: 'numeric' });
-                summaryLines.push(`📋 *Resoconto Presenze - ${monthName.toUpperCase()}* 📋\n`);
-
-                Object.keys(data).sort().forEach(dateStr => {
-                    const d = new Date(dateStr);
-                    if (d.getFullYear() === year && d.getMonth() === month) {
-                        const item = data[dateStr];
-                        if (item.overtime > 0) totalOvertime += item.overtime;
-                        if (item.permits > 0) totalPermits += item.permits;
-                        
-                        let line = `- ${dateStr}: *${item.status}*`;
-                        if (item.overtime > 0) line += ` | ⚡️ Straord: ${item.overtime}h`;
-                        if (item.permits > 0) line += ` | ⏳ Permessi: ${item.permits}h`;
-                        if (item.notes) line += ` (${item.notes})`;
-                        summaryLines.push(line);
-                    }
-                });
-
-                summaryLines.push(`\n📌 *Totale Straordinari:* ${totalOvertime} ore`);
-                summaryLines.push(`📌 *Totale Permessi:* ${totalPermits} ore`);
-
-                const text = encodeURIComponent(summaryLines.join('\n'));
-                window.open(`https://wa.me/?text=${text}`, '_blank');
-            });
-
-            // Render principale (Calendario e Statistiche)
-            function renderApp() {
-                const data = getStoredData();
-                const year = currentDate.getFullYear();
-                const month = currentDate.getMonth();
-
-                // Titolo Mese
-                const monthName = currentDate.toLocaleString('it-IT', { month: 'long', year: 'numeric' });
-                document.getElementById('calendar-month-title').textContent = monthName;
-
-                // Calcolo Totale Straordinari del Mese per la barra di progresso
-                let monthOvertime = 0;
-                Object.keys(data).forEach(dateStr => {
-                    const d = new Date(dateStr);
-                    if (d.getFullYear() === year && d.getMonth() === month) {
-                        monthOvertime += (data[dateStr].overtime || 0);
-                    }
-                });
-
-                const targetOvertime = 20; // Target mensile indicativo
-                const percentage = Math.min(Math.round((monthOvertime / targetOvertime) * 100), 100);
-                document.getElementById('overtime-counter').textContent = `${monthOvertime} / ${targetOvertime} ore`;
-                document.getElementById('overtime-bar').style.width = `${percentage}%`;
-
-                // Generazione Calendario
-                const container = document.getElementById('calendar-days');
-                container.innerHTML = '';
-
-                const firstDayIndex = new Date(year, month, 1).getDay();
-                // Adatta per iniziare da Lunedì (0 = Lunedì, 6 = Domenica)
-                const adjustedFirstDay = (firstDayIndex === 0) ? 6 : firstDayIndex - 1;
-                const totalDays = new Date(year, month + 1, 0).getDate();
-
-                // Spazi vuoti iniziali
-                for (let i = 0; i < adjustedFirstDay; i++) {
-                    const emptyDiv = document.createElement('div');
-                    container.appendChild(emptyDiv);
-                }
-
-                // Giorni del mese
-                for (let day = 1; day <= totalDays; day++) {
-                    const dayStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-                    const dayEl = document.createElement('div');
-                    dayEl.className = 'cal-day text-slate-300';
-                    dayEl.textContent = day;
-
-                    const record = data[dayStr];
-                    if (record) {
-                        if (record.status === 'Ferie') dayEl.classList.add('has-ferie');
-                        else if (record.status === 'Malattia') dayEl.classList.add('has-malattia');
-                        else if (record.status === 'Lavorato') dayEl.classList.add('has-lavoro');
-
-                        if (record.overtime > 0) dayEl.classList.add('has-straordinari');
-                        if (record.permits > 0) dayEl.classList.add('has-permessi');
-
-                        // Tooltip visivo o alert rapido al click sul giorno
-                        dayEl.title = `${dayStr}: ${record.status} ${record.overtime ? ' | Straordinari: '+record.overtime+'h' : ''} ${record.permits ? ' | Permessi: '+record.permits+'h' : ''}`;
-                    }
-
-                    container.appendChild(dayEl);
-                }
-            }
-
-            renderApp();
-        });
-    </script>
-</body>
-</html>
+            gap:
